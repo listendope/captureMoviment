@@ -272,12 +272,12 @@ class CapturaMovimento:
             self._mostrar_contagem(frame, contagem, lado)
             
             # Verifica o sinal de L
-            if self._verificar_sinal_L(landmarks, lado):
-                self._mostrar_mensagem_L(frame)
+            #if self._verificar_sinal_L(landmarks, lado):
+            #    self._mostrar_mensagem_L(frame)
 
             # Verifica formato de coração
-            if self._verificar_coracao(landmarks, lado):
-                self._mostrar_mensagem_coracao(frame)
+            #if self._verificar_coracao(landmarks, lado):
+            #    self._mostrar_mensagem_coracao(frame)
 
     def _desenhar_numeros_alvo(self, frame):
         largura = frame.shape[1]
