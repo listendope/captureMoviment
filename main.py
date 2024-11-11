@@ -4,14 +4,11 @@ import numpy as np
 import random
 
 class VirtualPaint:
-    def __init__(self):
-        self.cap = cv2.VideoCapture(0)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        
-        self.mp_hands = mp.solutions.hands
-        self.hands = self.mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.5)
-        self.mp_drawing = mp.solutions.drawing_utils
+    def __init__(self, cap, hands, mp_hands, mp_drawing):
+        self.cap = cap
+        self.hands = hands
+        self.mp_hands = mp_hands
+        self.mp_drawing = mp_drawing
         
         _, frame = self.cap.read()
         self.canvas = np.zeros_like(frame)
@@ -70,7 +67,7 @@ class VirtualPaint:
 
     def _draw_return_button(self, frame):
         cv2.rectangle(frame, (50, 650), (250, 700), (0, 0, 255), -1)
-        cv2.putText(frame, "Voltar", (70, 685),
+        cv2.putText(frame, "Voltar menu", (70, 685),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
     def _check_return_button(self, x, y):
@@ -112,9 +109,12 @@ class VirtualPaint:
                 elif self._check_return_button(x, y):
                     self.frame_count += 1
                     if self.frame_count >= 15:
-                        self.cap.release()
-                        cv2.destroyAllWindows()
+                        cv2.destroyWindow('Virtual Paint')
                         menu = Menu()
+                        menu.cap = self.cap
+                        menu.hands = self.hands
+                        menu.mp_hands = self.mp_hands
+                        menu.mp_drawing = self.mp_drawing
                         menu.run()
                         return
                 else:
@@ -137,7 +137,7 @@ class VirtualPaint:
                 self.prev_point = None
 
     def run(self):
-        while self.cap.isOpened():
+        while True:
             ret, frame = self.cap.read()
             if not ret:
                 break
@@ -166,18 +166,12 @@ class VirtualPaint:
             elif key & 0xFF == ord('c'):
                 self.canvas = np.zeros_like(self.canvas)
 
-        self.cap.release()
-        cv2.destroyAllWindows()
-
 class NumberGame:
-    def __init__(self):
-        self.cap = cv2.VideoCapture(0)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        
-        self.mp_hands = mp.solutions.hands
-        self.hands = self.mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.5)
-        self.mp_drawing = mp.solutions.drawing_utils
+    def __init__(self, cap, hands, mp_hands, mp_drawing):
+        self.cap = cap
+        self.hands = hands
+        self.mp_hands = mp_hands
+        self.mp_drawing = mp_drawing
         
         self.score = 0
         self.current_equation = None
@@ -255,7 +249,7 @@ class NumberGame:
 
     def _draw_return_button(self, frame):
         cv2.rectangle(frame, (50, 650), (250, 700), (0, 0, 255), -1)
-        cv2.putText(frame, "Voltar", (70, 685),
+        cv2.putText(frame, "Voltar menu", (70, 685),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
     def _check_return_button(self, x, y):
@@ -265,7 +259,7 @@ class NumberGame:
         if self.current_equation is None:
             self.current_equation, self.current_answer = self._generate_equation()
             
-        while self.cap.isOpened():
+        while True:
             ret, frame = self.cap.read()
             if not ret:
                 break
@@ -287,7 +281,6 @@ class NumberGame:
                     handedness = results.multi_handedness[idx].classification[0].label
                     total_fingers += self._count_fingers(hand_landmarks, handedness)
 
-                    # Check return button
                     index_tip = hand_landmarks.landmark[8]
                     x = int(index_tip.x * frame.shape[1])
                     y = int(index_tip.y * frame.shape[0])
@@ -295,9 +288,12 @@ class NumberGame:
                     if self._check_return_button(x, y):
                         self.return_frame_count += 1
                         if self.return_frame_count >= self.FRAMES_TO_CONFIRM:
-                            self.cap.release()
-                            cv2.destroyAllWindows()
+                            cv2.destroyWindow('Number Game')
                             menu = Menu()
+                            menu.cap = self.cap
+                            menu.hands = self.hands
+                            menu.mp_hands = self.mp_hands
+                            menu.mp_drawing = self.mp_drawing
                             menu.run()
                             return
                     else:
@@ -322,9 +318,6 @@ class NumberGame:
             
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-                
-        self.cap.release()
-        cv2.destroyAllWindows()
 
 class Menu:
     def __init__(self):
@@ -342,19 +335,28 @@ class Menu:
         }
         
         self.selection_frames = 0
-        self.FRAMES_TO_CONFIRM = 25
+        self.FRAMES_TO_CONFIRM = 15
 
     def _draw_menu(self, frame):
+        # Draw title
+        title = "Escolha seu jogo"
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        title_size = cv2.getTextSize(title, font, 2, 3)[0]
+        title_x = (frame.shape[1] - title_size[0]) // 2
+        cv2.putText(frame, title, (title_x, 150), font, 2, (255, 255, 255), 3)
+
+        # Draw option boxes with enhanced visual style
         for option, coords in self.options.items():
+            # Draw filled rectangle
             cv2.rectangle(frame, coords[0], coords[1], (0, 255, 0), -1)
             
             # Calculate text position for centering
-            text_size = cv2.getTextSize(option, cv2.FONT_HERSHEY_SIMPLEX, 1.5, 2)[0]
+            text_size = cv2.getTextSize(option, font, 1.5, 2)[0]
             text_x = coords[0][0] + (coords[1][0] - coords[0][0] - text_size[0]) // 2
             text_y = coords[0][1] + (coords[1][1] - coords[0][1] + text_size[1]) // 2
             
-            cv2.putText(frame, option, (text_x, text_y), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
+            # Draw text
+            cv2.putText(frame, option, (text_x, text_y), font, 1.5, (255, 255, 255), 2)
 
     def _check_selection(self, x, y):
         for option, coords in self.options.items():
@@ -363,10 +365,25 @@ class Menu:
                 return option
         return None
 
+    def _draw_instructions(self, frame):
+        instructions = "Aponte o dedo para selecionar o jogo."
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        text_size = cv2.getTextSize(instructions, font, 1, 2)[0]
+        text_x = (frame.shape[1] - text_size[0]) // 2
+        cv2.putText(frame, instructions, (text_x, 600), font, 1, (255, 255, 255), 2)
+
+    def _launch_game(self, game_name):
+        cv2.destroyWindow('Menu')
+        if game_name == 'Virtual Paint':
+            game = VirtualPaint(self.cap, self.hands, self.mp_hands, self.mp_drawing)
+        else:
+            game = NumberGame(self.cap, self.hands, self.mp_hands, self.mp_drawing)
+        game.run()
+
     def run(self):
         selected_option = None
         
-        while self.cap.isOpened():
+        while True:
             ret, frame = self.cap.read()
             if not ret:
                 break
@@ -376,36 +393,38 @@ class Menu:
             results = self.hands.process(rgb_frame)
 
             self._draw_menu(frame)
+            self._draw_instructions(frame)
 
             if results.multi_hand_landmarks:
                 for hand_landmarks in results.multi_hand_landmarks:
                     self.mp_drawing.draw_landmarks(
-                        frame, hand_landmarks, self.mp_hands.HAND_CONNECTIONS)
+                        frame, hand_landmarks, self.mp_hands.HAND_CONNECTIONS,
+                        self.mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2),
+                        self.mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2)
+                    )
                     
-                    # Get index finger tip position
                     index_tip = hand_landmarks.landmark[8]
                     x = int(index_tip.x * frame.shape[1])
                     y = int(index_tip.y * frame.shape[0])
                     
-                    # Check if index finger is pointing at an option
+                    cv2.circle(frame, (x, y), 10, (255, 0, 255), -1)
+                    
                     option = self._check_selection(x, y)
                     if option:
                         if option == selected_option:
                             self.selection_frames += 1
+                            radius = int((self.selection_frames / self.FRAMES_TO_CONFIRM) * 20)
+                            cv2.circle(frame, (x, y), radius, (0, 255, 255), 2)
+                            
                             if self.selection_frames >= self.FRAMES_TO_CONFIRM:
-                                self.cap.release()
-                                cv2.destroyAllWindows()
-                                
-                                if option == 'Virtual Paint':
-                                    paint = VirtualPaint()
-                                    paint.run()
-                                else:
-                                    game = NumberGame()
-                                    game.run()
+                                self._launch_game(option)
                                 return
                         else:
                             selected_option = option
                             self.selection_frames = 0
+                    else:
+                        selected_option = None
+                        self.selection_frames = 0
 
             cv2.imshow('Menu', frame)
             
