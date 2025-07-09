@@ -2,6 +2,7 @@ import cv2
 import mediapipe as mp
 from VirtualPaint import VirtualPaint
 from NumberGame import NumberGame
+from PeopleDetection import PeopleDetection
 
 class Menu:
     def __init__(self):
@@ -14,8 +15,9 @@ class Menu:
         self.mp_drawing = mp.solutions.drawing_utils
         
         self.options = {
-            'Virtual Paint': [(440, 250), (840, 350)],
-            'Number Game': [(440, 400), (840, 500)]
+            'Virtual Paint': [(340, 200), (640, 280)],
+            'Number Game': [(340, 320), (640, 400)],
+            'People Detection': [(340, 440), (640, 520)]
         }
         
         self.selection_frames = 0
@@ -27,7 +29,7 @@ class Menu:
         font = cv2.FONT_HERSHEY_SIMPLEX
         title_size = cv2.getTextSize(title, font, 2, 3)[0]
         title_x = (frame.shape[1] - title_size[0]) // 2
-        cv2.putText(frame, title, (title_x, 150), font, 2, (255, 255, 255), 3)
+        cv2.putText(frame, title, (title_x, 120), font, 2, (255, 255, 255), 3)
 
         # Draw option boxes with enhanced visual style
         for option, coords in self.options.items():
@@ -35,12 +37,12 @@ class Menu:
             cv2.rectangle(frame, coords[0], coords[1], (0, 255, 0), -1)
             
             # Calculate text position for centering
-            text_size = cv2.getTextSize(option, font, 1.5, 2)[0]
+            text_size = cv2.getTextSize(option, font, 1.2, 2)[0]
             text_x = coords[0][0] + (coords[1][0] - coords[0][0] - text_size[0]) // 2
             text_y = coords[0][1] + (coords[1][1] - coords[0][1] + text_size[1]) // 2
             
             # Draw text
-            cv2.putText(frame, option, (text_x, text_y), font, 1.5, (255, 255, 255), 2)
+            cv2.putText(frame, option, (text_x, text_y), font, 1.2, (255, 255, 255), 2)
 
     def _check_selection(self, x, y):
         for option, coords in self.options.items():
@@ -60,8 +62,10 @@ class Menu:
         cv2.destroyWindow('Menu')
         if game_name == 'Virtual Paint':
             game = VirtualPaint(self.cap, self.hands, self.mp_hands, self.mp_drawing)
-        else:
+        elif game_name == 'Number Game':
             game = NumberGame(self.cap, self.hands, self.mp_hands, self.mp_drawing)
+        elif game_name == 'People Detection':
+            game = PeopleDetection(self.cap, self.hands, self.mp_hands, self.mp_drawing)
         
         return_to_menu = game.run()
         return return_to_menu
